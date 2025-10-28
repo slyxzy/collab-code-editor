@@ -2,50 +2,71 @@ const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
 // Create database connection
-const db = new sqlite3.Database(path.join(__dirname, 'sessions.db'), (err) => {
+const dbPath = process.env.DATABASE_PATH || path.join(__dirname, 'sessions.db');
+const db = new sqlite3.Database(dbPath, (err) => {
   if (err) {
     console.error('Error opening database:', err);
   } else {
-    console.log('Connected to SQLite database');
-    initializeDatabase();
+    console.log('Connected to SQLite database at:', dbPath);
   }
 });
 
-// Initialize database tables
+// Initialize database tables - MUST complete before server starts
 function initializeDatabase() {
-  // Sessions table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS sessions (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      code TEXT DEFAULT '// Start coding together!\n',
-      language TEXT DEFAULT 'javascript',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `, (err) => {
-    if (err) console.error('Error creating sessions table:', err);
-  });
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      // Sessions table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS sessions (
+          id TEXT PRIMARY KEY,
+          name TEXT NOT NULL,
+          code TEXT DEFAULT '// Start coding together!\n',
+          language TEXT DEFAULT 'javascript',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `, (err) => {
+        if (err) {
+          console.error('Error creating sessions table:', err);
+          reject(err);
+        } else {
+          console.log('✓ Sessions table ready');
+        }
+      });
 
-  // Activity logs table
-  db.run(`
-    CREATE TABLE IF NOT EXISTS activity_logs (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      user_id TEXT,
-      session_id TEXT,
-      action TEXT,
-      metadata TEXT,
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (session_id) REFERENCES sessions(id)
-    )
-  `, (err) => {
-    if (err) console.error('Error creating activity_logs table:', err);
-  });
+      // Activity logs table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS activity_logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id TEXT,
+          session_id TEXT,
+          action TEXT,
+          metadata TEXT,
+          timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+      `, (err) => {
+        if (err) {
+          console.error('Error creating activity_logs table:', err);
+          reject(err);
+        } else {
+          console.log('✓ Activity logs table ready');
+        }
+      });
 
-  // Create indexes for better query performance
-  db.run(`CREATE INDEX IF NOT EXISTS idx_session_updated ON sessions(updated_at DESC)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_activity_session ON activity_logs(session_id, timestamp)`);
-  db.run(`CREATE INDEX IF NOT EXISTS idx_activity_user ON activity_logs(user_id, timestamp)`);
+      // Create indexes
+      db.run(`CREATE INDEX IF NOT EXISTS idx_session_updated ON sessions(updated_at DESC)`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_activity_session ON activity_logs(session_id, timestamp)`);
+      db.run(`CREATE INDEX IF NOT EXISTS idx_activity_user ON activity_logs(user_id, timestamp)`, (err) => {
+        if (err) {
+          console.error('Error creating indexes:', err);
+          reject(err);
+        } else {
+          console.log('✓ Database indexes created');
+          resolve();
+        }
+      });
+    });
+  });
 }
 
 // Database query functions
@@ -109,7 +130,7 @@ const dbQueries = {
     });
   },
 
-  // Log activity
+  // Log activity - with error handling
   logActivity: (userId, sessionId, action, metadata = {}) => {
     return new Promise((resolve, reject) => {
       db.run(
@@ -117,8 +138,12 @@ const dbQueries = {
          VALUES (?, ?, ?, ?)`,
         [userId, sessionId, action, JSON.stringify(metadata)],
         function(err) {
-          if (err) reject(err);
-          else resolve({ id: this.lastID });
+          if (err) {
+            console.warn('Failed to log activity (non-critical):', err.message);
+            resolve({ skipped: true }); // Don't fail the operation
+          } else {
+            resolve({ id: this.lastID });
+          }
         }
       );
     });
@@ -174,4 +199,4 @@ const dbQueries = {
   }
 };
 
-module.exports = { db, dbQueries };
+module.exports = { db, dbQueries, initializeDatabase };

@@ -3,7 +3,7 @@ const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const { dbQueries } = require('./database');
+const { dbQueries, initializeDatabase } = require('./database');
 
 const app = express();
 const server = http.createServer(app);
@@ -270,9 +270,18 @@ io.on('connection', (socket) => {
 });
 
 // Start server
+// Start server AFTER database is initialized
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log(`📡 WebSocket server ready`);
-  console.log(`💾 Database connected`);
-});
+
+initializeDatabase()
+  .then(() => {
+    server.listen(PORT, () => {
+      console.log(`🚀 Server running on port ${PORT}`);
+      console.log(`📡 WebSocket server ready`);
+      console.log(`💾 Database initialized and ready`);
+    });
+  })
+  .catch((err) => {
+    console.error('Failed to initialize database:', err);
+    process.exit(1);
+  });
