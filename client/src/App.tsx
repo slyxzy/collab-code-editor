@@ -174,21 +174,21 @@ function App() {
     <div className="App">
       <header className="header">
         <div className="header-left">
-          <h1>⚡ Collab Code Editor</h1>
+          <h1>WeaveKit</h1>
           <span className="session-name">{sessionName}</span>
         </div>
         
         <div className="controls">
           <button onClick={createNewSession} className="btn-new">
-            + New Session
+           New Session
           </button>
           
           <button onClick={() => setShowSessionList(!showSessionList)} className="btn-sessions">
-            📁 Sessions
+             Sessions
           </button>
           
           <button onClick={saveCurrentSession} className="btn-save">
-            💾 Save
+            Save
           </button>
           
           {saveStatus && <span className="save-status">{saveStatus}</span>}
@@ -208,7 +208,7 @@ function App() {
           </select>
           
           <div className="users-count">
-            👥 {users.length} online
+           {users.length} online
           </div>
         </div>
       </header>

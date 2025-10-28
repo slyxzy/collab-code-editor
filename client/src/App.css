@@ -27,8 +27,7 @@ body {
   justify-content: space-between;
   align-items: center;
   padding: 1rem 2rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-bottom: 2px solid #3e3e42;
+  background: linear-gradient(135deg, #2e3b74 0%, #7c12e6 110%);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
   z-index: 10;
 }
@@ -336,4 +335,5 @@ body {
     width: 95%;
     max-height: 80vh;
   }
+  
 }
