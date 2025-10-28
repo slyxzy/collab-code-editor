@@ -9,13 +9,25 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
+    origin: [
+      "http://localhost:3000",
+      "https://weavekit.netlify.app/",  // actual domain
+      "https://*.netlify.app"  // Allow all Netlify subdomains
+    ],
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://weavekit.netlify.app/",  // Your actual Netlify URL
+    "https://*.netlify.app"
+  ],
+  credentials: true
+}));
 app.use(bodyParser.json());
 app.use(express.static('public'));
 

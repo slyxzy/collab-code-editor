@@ -57,6 +57,8 @@ body {
   display: flex;
   gap: 0.8rem;
   align-items: center;
+  flex-wrap: nowrap;
+  position: relative;
 }
 
 /* Button Styles */
@@ -93,26 +95,6 @@ body {
   border-radius: 6px;
   font-size: 13px;
   color: #4ade80;
-}
-
-.language-select {
-  padding: 0.6rem 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s ease;
-}
-
-.language-select:hover {
-  background: rgba(255, 255, 255, 0.15);
-}
-
-.language-select option {
-  background: #2d2d30;
-  color: white;
 }
 
 .users-count {
@@ -335,5 +317,112 @@ body {
     width: 95%;
     max-height: 80vh;
   }
-  
+  /* Custom Language Dropdown with Slide Animation */
+.language-dropdown-container {
+  position: relative;
+  display: inline-block;
+}
+
+.language-select {
+  padding: 0.6rem 1.2rem;
+  background: rgba(255, 255, 255, 0.15);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  min-width: 140px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.language-select:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.language-select:active {
+  transform: translateY(0);
+}
+
+/* Dropdown Menu - Floats over content */
+.language-dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 8px;
+  background: #2d2d30;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  min-width: 160px;
+  max-height: 300px;
+  overflow-y: auto;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  z-index: 9999;
+  animation: slideDown 0.3s ease-out;
+  transform-origin: top;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scaleY(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scaleY(1);
+  }
+}
+
+.language-option {
+  padding: 0.8rem 1.2rem;
+  color: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  white-space: nowrap;
+}
+
+.language-option:last-child {
+  border-bottom: none;
+}
+
+.language-option:hover {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  transform: translateX(4px);
+  padding-left: 1.6rem;
+}
+
+.language-option:active {
+  background: #667eea;
+  transform: scale(0.98);
+}
+
+/* Stagger animation for options */
+.language-dropdown .language-option {
+  animation: fadeInOption 0.3s ease-out backwards;
+}
+
+.language-dropdown .language-option:nth-child(1) { animation-delay: 0.05s; }
+.language-dropdown .language-option:nth-child(2) { animation-delay: 0.08s; }
+.language-dropdown .language-option:nth-child(3) { animation-delay: 0.11s; }
+.language-dropdown .language-option:nth-child(4) { animation-delay: 0.14s; }
+.language-dropdown .language-option:nth-child(5) { animation-delay: 0.17s; }
+.language-dropdown .language-option:nth-child(6) { animation-delay: 0.20s; }
+.language-dropdown .language-option:nth-child(7) { animation-delay: 0.23s; }
+
+@keyframes fadeInOption {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
 }
