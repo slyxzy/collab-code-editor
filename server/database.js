@@ -54,11 +54,9 @@ const dbQueries = {
   saveSession: (id, name, code, language) => {
     return new Promise((resolve, reject) => {
       db.run(
-        `INSERT INTO sessions (id, name, code, language, updated_at) 
-         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
-         ON CONFLICT(id) DO UPDATE SET 
-         code = ?, language = ?, updated_at = CURRENT_TIMESTAMP`,
-        [id, name, code, language, code, language],
+        `INSERT OR REPLACE INTO sessions (id, name, code, language, updated_at) 
+         VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)`,
+        [id, name, code, language],
         function(err) {
           if (err) reject(err);
           else resolve({ id, name, code, language });
