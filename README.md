@@ -41,7 +41,7 @@ activity_logs (id, user_id, session_id, action, metadata, timestamp)
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/YOUR_USERNAME/collab-code-editor.git
+git clone https://github.com/slyxzy/collab-code-editor.git
 cd collab-code-editor
 ```
 
