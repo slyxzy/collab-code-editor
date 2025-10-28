@@ -25,14 +25,18 @@ function App() {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [showSessionList, setShowSessionList] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   
   const socketRef = useRef<Socket | null>(null);
   const editorRef = useRef<any>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // API URL from environment variable or default to localhost
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
   // Initialize socket connection
   useEffect(() => {
-    socketRef.current = io('http://localhost:3001');
+    socketRef.current = io(API_URL);
 
     socketRef.current.on('connect', () => {
       console.log('Connected to server');
@@ -75,6 +79,24 @@ function App() {
     loadSessions();
   }, []);
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.language-dropdown-container')) {
+        setShowLanguageDropdown(false);
+      }
+    };
+
+    if (showLanguageDropdown) {
+      document.addEventListener('click', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [showLanguageDropdown]);
+
   const loadSessions = async () => {
     try {
       const response = await fetch('http://localhost:3001/api/sessions');
@@ -107,6 +129,7 @@ function App() {
 
   const handleLanguageChange = (newLanguage: string) => {
     setLanguage(newLanguage);
+    setShowLanguageDropdown(false);
     socketRef.current?.emit('language-change', { 
       language: newLanguage,
       sessionName 
@@ -174,17 +197,17 @@ function App() {
     <div className="App">
       <header className="header">
         <div className="header-left">
-          <h1>WeaveKit</h1>
+          <h1>Collab Code Editor</h1>
           <span className="session-name">{sessionName}</span>
         </div>
         
         <div className="controls">
           <button onClick={createNewSession} className="btn-new">
-           New Session
+            + New Session
           </button>
           
           <button onClick={() => setShowSessionList(!showSessionList)} className="btn-sessions">
-             Sessions
+            Sessions
           </button>
           
           <button onClick={saveCurrentSession} className="btn-save">
@@ -193,22 +216,64 @@ function App() {
           
           {saveStatus && <span className="save-status">{saveStatus}</span>}
           
-          <select 
-            value={language} 
-            onChange={(e) => handleLanguageChange(e.target.value)}
-            className="language-select"
-          >
-            <option value="javascript">JavaScript</option>
-            <option value="typescript">TypeScript</option>
-            <option value="python">Python</option>
-            <option value="java">Java</option>
-            <option value="cpp">C++</option>
-            <option value="csharp">C#</option>
-            <option value="go">Go</option>
-          </select>
+          <div className="language-dropdown-container">
+            <button 
+              className="language-select"
+              onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+            >
+              {language.charAt(0).toUpperCase() + language.slice(1)} ▼
+            </button>
+            
+            {showLanguageDropdown && (
+              <div className="language-dropdown">
+                <div 
+                  className="language-option"
+                  onClick={() => handleLanguageChange('javascript')}
+                >
+                  JavaScript
+                </div>
+                <div 
+                  className="language-option"
+                  onClick={() => handleLanguageChange('typescript')}
+                >
+                  TypeScript
+                </div>
+                <div 
+                  className="language-option"
+                  onClick={() => handleLanguageChange('python')}
+                >
+                  Python
+                </div>
+                <div 
+                  className="language-option"
+                  onClick={() => handleLanguageChange('java')}
+                >
+                  Java
+                </div>
+                <div 
+                  className="language-option"
+                  onClick={() => handleLanguageChange('cpp')}
+                >
+                  C++
+                </div>
+                <div 
+                  className="language-option"
+                  onClick={() => handleLanguageChange('csharp')}
+                >
+                  C#
+                </div>
+                <div 
+                  className="language-option"
+                  onClick={() => handleLanguageChange('go')}
+                >
+                  Go
+                </div>
+              </div>
+            )}
+          </div>
           
           <div className="users-count">
-           {users.length} online
+            {users.length} online
           </div>
         </div>
       </header>
