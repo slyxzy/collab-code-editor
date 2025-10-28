@@ -149,24 +149,6 @@ collab-code-editor/
 - Theme customization
 - Export code to files
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## License
-
-MIT License - feel free to use this project for learning or building your own applications.
-
-## Author
-
-Built as a full-stack internship portfolio project demonstrating:
-- Real-time web applications
-- WebSocket implementation
-- SQL database design and queries
-- RESTful API development
-- Modern React patterns
-- Responsive UI design
-
 ## Acknowledgments
 
 - Monaco Editor by Microsoft
