@@ -16,6 +16,9 @@ interface Session {
   updated_at: string;
 }
 
+// Get API URL outside component so it's stable
+const getApiUrl = () => process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
 function App() {
   const [code, setCode] = useState('// Start coding together!\n');
   const [users, setUsers] = useState<User[]>([]);
@@ -31,12 +34,9 @@ function App() {
   const editorRef = useRef<any>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // API URL from environment variable or default to localhost
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
-
   // Initialize socket connection
   useEffect(() => {
-    socketRef.current = io(API_URL);
+    socketRef.current = io(getApiUrl());
 
     socketRef.current.on('connect', () => {
       console.log('Connected to server');
@@ -99,7 +99,7 @@ function App() {
 
   const loadSessions = async () => {
     try {
-      const response = await fetch('http://localhost:3001/api/sessions');
+      const response = await fetch(`${getApiUrl()}/api/sessions`);
       const data = await response.json();
       setSessions(data);
     } catch (error) {
@@ -149,7 +149,7 @@ function App() {
       setCode('// Start coding together!\n');
       
       // Create session in database
-      fetch('http://localhost:3001/api/sessions', {
+      fetch(`${getApiUrl()}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -174,7 +174,7 @@ function App() {
 
   const saveCurrentSession = async () => {
     try {
-      await fetch('http://localhost:3001/api/sessions', {
+      await fetch(`${getApiUrl()}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
