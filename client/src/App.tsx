@@ -31,7 +31,11 @@ function App() {
   const [code, setCode] = useState('// Start coding together!\n');
   const [users, setUsers] = useState<User[]>([]);
   const [language, setLanguage] = useState('javascript');
-  const [sessionId, setSessionId] = useState('default-session');
+  const [sessionId, setSessionId] = useState(() => {
+    // Check URL for session parameter
+    const params = new URLSearchParams(window.location.search);
+    return params.get('session') || 'default-session';
+  });
   const [sessionName, setSessionName] = useState('My Coding Session');
   const [sessions, setSessions] = useState<Session[]>([]);
   const [showSessionList, setShowSessionList] = useState(false);
@@ -197,6 +201,9 @@ function App() {
       setSessionName(newSessionName);
       setCode('// Start coding together!\n');
       
+      // Update URL
+      window.history.pushState({}, '', `?session=${newSessionId}`);
+      
       // Create session in database
       fetch(`${getApiUrl()}/api/sessions`, {
         method: 'POST',
@@ -287,6 +294,17 @@ function App() {
             Save
           </button>
           
+          <button 
+            onClick={() => {
+              const shareUrl = `${window.location.origin}?session=${sessionId}`;
+              navigator.clipboard.writeText(shareUrl);
+              alert('Link copied! Share this with others to collaborate.');
+            }} 
+            className="btn-share"
+          >
+            <span className="btn-icon">🔗</span>
+            Share Link
+          </button>
           {saveStatus && <span className="save-status">{saveStatus}</span>}
           
           <div className="language-dropdown-container">
