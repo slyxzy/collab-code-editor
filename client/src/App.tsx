@@ -21,7 +21,7 @@ const getApiUrl = () => {
   // Check if we're in production (deployed)
   if (process.env.NODE_ENV === 'production') {
     // Use environment variable if set, otherwise use Render backend URL
-    return process.env.REACT_APP_API_URL || 'https://your-render-backend-url.onrender.com';
+    return process.env.REACT_APP_API_URL || 'https://weavekit.onrender.com';
   }
   // Development - use localhost
   return process.env.REACT_APP_API_URL || 'http://localhost:3001';
