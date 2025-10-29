@@ -222,6 +222,43 @@ REACT_APP_API_URL=https://weavekit-api.onrender.com
 
 ---
 
+## AWS S3 Backups (Automated, rolling 23 snapshots)
+
+This project supports optional automated backups of session data to AWS S3 with a rolling retention of 23 snapshots per session. The oldest backups are deleted automatically once the limit is exceeded.
+
+### What this does for your website
+- **Data durability**: Stores session snapshots in S3, protecting against local DB loss.
+- **Point-in-time restore**: You can fetch any of the last 23 snapshots per session.
+- **Low overhead**: Backups are fire-and-forget and prune themselves.
+
+### When backups trigger
+- On REST saves to `/api/sessions`
+- On code edits (`code-change` WebSocket event)
+- On language changes (`language-change` WebSocket event)
+- Optional: a `backup-now` WebSocket event can be emitted by the client to force a snapshot
+
+### Setup
+1) Create an S3 bucket (e.g., `weavekit-backups`).
+
+2) Provision IAM credentials with permissions for:
+   - `s3:PutObject`, `s3:ListBucket`, `s3:DeleteObject` on that bucket.
+
+3) Set backend environment variables (Render or local `.env` in `server/`):
+```
+AWS_ACCESS_KEY_ID=YOUR_KEY
+AWS_SECRET_ACCESS_KEY=YOUR_SECRET
+AWS_REGION=us-east-1
+S3_BUCKET_NAME=weavekit-backups
+# Optional: override retention (default 23)
+S3_MAX_BACKUPS=23
+```
+
+4) Deploy/restart the backend.
+
+Backups are stored under `sessions/<sessionId>/backup-<timestamp>.json`.
+
+---
+
 ## Performance Optimizations
 
 - **Debounced Database Writes**: Reduces I/O operations during rapid typing

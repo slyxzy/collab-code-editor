@@ -1,9 +1,11 @@
+require('dotenv').config();
 const express = require('express');
 const http = require('http');
 const socketIo = require('socket.io');
 const cors = require('cors');
 const bodyParser = require('body-parser');
 const { dbQueries, initializeDatabase } = require('./database');
+const { backupSession } = require('./awsBackup');
 
 const app = express();
 const server = http.createServer(app);
@@ -79,6 +81,12 @@ app.post('/api/sessions', async (req, res) => {
       return res.status(400).json({ error: 'Session ID and name are required' });
     }
     const session = await dbQueries.saveSession(id, name, code || '// Start coding together!\n', language || 'javascript');
+
+    // Fire-and-forget S3 backup
+    const payload = { id, name, code: session.code, language: session.language, timestamp: Date.now() };
+    backupSession(id, payload).catch((err) => {
+      console.warn('S3 backup (REST save) skipped/failed:', err?.message || err);
+    });
     res.json(session);
   } catch (error) {
     console.error('Error saving session:', error);
@@ -199,6 +207,12 @@ io.on('connection', (socket) => {
           session.language
         );
 
+        // Fire-and-forget S3 backup on edits (debounce at higher layer if needed)
+        const payload = { id: currentSessionId, name: data.sessionName || 'Untitled', code: data.code, language: session.language, timestamp: Date.now() };
+        backupSession(currentSessionId, payload).catch((err) => {
+          console.warn('S3 backup (code-change) skipped/failed:', err?.message || err);
+        });
+
         // Log activity
         await dbQueries.logActivity(currentUserId, currentSessionId, 'edit', {
           codeLength: data.code.length
@@ -231,6 +245,12 @@ io.on('connection', (socket) => {
           data.language
         );
 
+        // Fire-and-forget S3 backup on language change
+        const payload = { id: currentSessionId, name: data.sessionName || 'Untitled', code: session.code, language: data.language, timestamp: Date.now() };
+        backupSession(currentSessionId, payload).catch((err) => {
+          console.warn('S3 backup (language-change) skipped/failed:', err?.message || err);
+        });
+
         // Log activity
         await dbQueries.logActivity(currentUserId, currentSessionId, 'language_change', {
           language: data.language
@@ -238,6 +258,20 @@ io.on('connection', (socket) => {
       }
     } catch (error) {
       console.error('Error handling language change:', error);
+    }
+  });
+
+  // Optional: client can request an immediate backup
+  socket.on('backup-now', async (meta = {}) => {
+    if (!currentSessionId) return;
+    try {
+      const session = activeSessions.get(currentSessionId);
+      if (!session) return;
+      const payload = { id: currentSessionId, name: meta.sessionName || 'Untitled', code: session.code, language: session.language, timestamp: Date.now() };
+      await backupSession(currentSessionId, payload);
+      socket.emit('backup-complete', { ok: true });
+    } catch (err) {
+      socket.emit('backup-complete', { ok: false, error: err?.message || 'backup_failed' });
     }
   });
 
