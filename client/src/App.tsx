@@ -274,7 +274,7 @@ function App() {
     <div className="App">
       <header className="header">
         <div className="header-left">
-          <h1>Collab Code Editor</h1>
+          <h1>WeaveKit</h1>
           <span className="session-name">{sessionName}</span>
         </div>
         
