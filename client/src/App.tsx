@@ -203,14 +203,17 @@ function App() {
         
         <div className="controls">
           <button onClick={createNewSession} className="btn-new">
-            + New Session
+            <span className="btn-icon">✨</span>
+            New Session
           </button>
           
           <button onClick={() => setShowSessionList(!showSessionList)} className="btn-sessions">
+            <span className="btn-icon">📁</span>
             Sessions
           </button>
           
           <button onClick={saveCurrentSession} className="btn-save">
+            <span className="btn-icon">💾</span>
             Save
           </button>
           
