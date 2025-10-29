@@ -17,7 +17,15 @@ interface Session {
 }
 
 // Get API URL outside component so it's stable
-const getApiUrl = () => process.env.REACT_APP_API_URL || 'http://localhost:3001';
+const getApiUrl = () => {
+  // Check if we're in production (deployed)
+  if (process.env.NODE_ENV === 'production') {
+    // Use environment variable if set, otherwise use Render backend URL
+    return process.env.REACT_APP_API_URL || 'https://your-render-backend-url.onrender.com';
+  }
+  // Development - use localhost
+  return process.env.REACT_APP_API_URL || 'http://localhost:3001';
+};
 
 function App() {
   const [code, setCode] = useState('// Start coding together!\n');
@@ -37,7 +45,14 @@ function App() {
 
   // Initialize socket connection
   useEffect(() => {
-    socketRef.current = io(getApiUrl());
+    const apiUrl = getApiUrl();
+    console.log('Connecting to:', apiUrl);
+    
+    socketRef.current = io(apiUrl, {
+      transports: ['websocket', 'polling'], // Fallback to polling if websocket fails
+      timeout: 20000,
+      forceNew: true
+    });
 
     socketRef.current.on('connect', () => {
       console.log('Connected to server');
@@ -47,6 +62,11 @@ function App() {
 
     socketRef.current.on('disconnect', () => {
       console.log('Disconnected from server');
+      setIsConnected(false);
+    });
+
+    socketRef.current.on('connect_error', (error) => {
+      console.error('Connection error:', error);
       setIsConnected(false);
     });
 
@@ -115,10 +135,18 @@ function App() {
 
   const loadSessions = async () => {
     try {
-      const response = await fetch(`${getApiUrl()}/api/sessions`);
+      const apiUrl = getApiUrl();
+      console.log('Loading sessions from:', apiUrl);
+      
+      const response = await fetch(`${apiUrl}/api/sessions`);
+      console.log('Sessions response status:', response.status);
+      
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Load sessions failed:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
+      
       const data = await response.json();
       console.log('Sessions loaded:', data);
       setSessions(data);
@@ -197,9 +225,15 @@ function App() {
     try {
       setSaveStatus('Saving...');
       
-      const response = await fetch(`${getApiUrl()}/api/sessions`, {
+      const apiUrl = getApiUrl();
+      console.log('Saving to:', apiUrl);
+      
+      const response = await fetch(`${apiUrl}/api/sessions`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify({
           id: sessionId,
           name: sessionName,
@@ -208,8 +242,12 @@ function App() {
         })
       });
 
+      console.log('Save response status:', response.status);
+
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        const errorText = await response.text();
+        console.error('Save failed:', errorText);
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
       const result = await response.json();

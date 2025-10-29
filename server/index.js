@@ -11,7 +11,8 @@ const io = socketIo(server, {
   cors: {
     origin: [
       "http://localhost:3000",
-      "https://weavekit.netlify.app/",  // actual domain
+      "https://weavekit.netlify.app",  // Remove trailing slash
+      "https://weavekit.netlify.app/",  // Keep with trailing slash
       "https://*.netlify.app"  // Allow all Netlify subdomains
     ],
     methods: ["GET", "POST"],
@@ -23,7 +24,8 @@ const io = socketIo(server, {
 app.use(cors({
   origin: [
     "http://localhost:3000",
-    "https://weavekit.netlify.app/",  // Your actual Netlify URL
+    "https://weavekit.netlify.app",  // Remove trailing slash
+    "https://weavekit.netlify.app/",  // Keep with trailing slash
     "https://*.netlify.app"
   ],
   credentials: true
