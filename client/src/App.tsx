@@ -29,6 +29,7 @@ function App() {
   const [showSessionList, setShowSessionList] = useState(false);
   const [saveStatus, setSaveStatus] = useState('');
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
+  const [isConnected, setIsConnected] = useState(false);
   
   const socketRef = useRef<Socket | null>(null);
   const editorRef = useRef<any>(null);
@@ -40,13 +41,20 @@ function App() {
 
     socketRef.current.on('connect', () => {
       console.log('Connected to server');
+      setIsConnected(true);
       socketRef.current?.emit('join-session', sessionId);
     });
 
+    socketRef.current.on('disconnect', () => {
+      console.log('Disconnected from server');
+      setIsConnected(false);
+    });
+
     socketRef.current.on('session-init', (data: any) => {
+      console.log('Session initialized:', data);
       setCode(data.code);
       setLanguage(data.language);
-      setUsers(data.users);
+      setUsers(data.users || []);
     });
 
     socketRef.current.on('code-update', (data: any) => {
@@ -58,15 +66,23 @@ function App() {
     });
 
     socketRef.current.on('users-update', (updatedUsers: User[]) => {
-      setUsers(updatedUsers);
+      console.log('Users updated:', updatedUsers);
+      setUsers(updatedUsers || []);
     });
 
     socketRef.current.on('user-joined', (user: User) => {
       console.log('User joined:', user.id);
+      // The users-update event will handle the state update
     });
 
     socketRef.current.on('user-left', (data: any) => {
       console.log('User left:', data.id);
+      // The users-update event will handle the state update
+    });
+
+    socketRef.current.on('error', (error: any) => {
+      console.error('Socket error:', error);
+      setSaveStatus('Connection error ✗');
     });
 
     return () => {
@@ -100,10 +116,15 @@ function App() {
   const loadSessions = async () => {
     try {
       const response = await fetch(`${getApiUrl()}/api/sessions`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
       const data = await response.json();
+      console.log('Sessions loaded:', data);
       setSessions(data);
     } catch (error) {
       console.error('Error loading sessions:', error);
+      setSessions([]);
     }
   };
 
@@ -174,7 +195,9 @@ function App() {
 
   const saveCurrentSession = async () => {
     try {
-      await fetch(`${getApiUrl()}/api/sessions`, {
+      setSaveStatus('Saving...');
+      
+      const response = await fetch(`${getApiUrl()}/api/sessions`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -184,12 +207,21 @@ function App() {
           language: language
         })
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const result = await response.json();
+      console.log('Session saved successfully:', result);
+      
       setSaveStatus('Saved ✓');
       setTimeout(() => setSaveStatus(''), 2000);
       loadSessions();
     } catch (error) {
       console.error('Error saving session:', error);
       setSaveStatus('Save failed ✗');
+      setTimeout(() => setSaveStatus(''), 3000);
     }
   };
 
@@ -276,6 +308,9 @@ function App() {
           </div>
           
           <div className="users-count">
+            <span className={`connection-indicator ${isConnected ? 'connected' : 'disconnected'}`}>
+              {isConnected ? '🟢' : '🔴'}
+            </span>
             {users.length} online
           </div>
         </div>
